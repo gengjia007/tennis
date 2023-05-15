@@ -256,7 +256,7 @@ def main(opt):
     while True:
         time.sleep(0.01)
         current_time = datetime.datetime.now()
-        if str(current_time.time()).startswith("14:51"):
+        if str(current_time.time()).startswith("12:00"):
             print("current_time:    " + str(current_time.time()))
             break
 
