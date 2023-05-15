@@ -10,6 +10,10 @@ class MouseController:
     def click(self, button='left'):
         pg.click(button=button)
 
+    def double_click(self, button='left'):
+        pg.click(button=button)
+        pg.click(button=button)
+
     def move(self, position, speed=0.05):
         pg.moveTo(*position, speed)
 
@@ -21,6 +25,9 @@ class MouseController:
 
     def hscroll(self, dis):
         pg.hscroll(dis)
+
+    def vscroll(self, dis):
+        pg.vscroll(dis)
 
     def move_and_click(self, position):
         self.move(position)

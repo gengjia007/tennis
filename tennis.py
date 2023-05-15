@@ -2,14 +2,14 @@ import argparse
 import datetime
 import time
 from pathlib import Path
-
+import json
 import torch
 
 from models.common import DetectMultiBackend
 from mouse_controller import MouseController
 from screenshot import ScreenShot
 from utils.dataloaders import LoadImages
-from utils.general import (Profile, check_img_size, check_requirements, non_max_suppression, print_args, scale_boxes)
+from utils.general import (Profile, check_img_size, non_max_suppression, print_args, scale_boxes)
 from utils.torch_utils import select_device
 
 
@@ -19,6 +19,7 @@ class Tennis:
                  puzzle_weights='yolov5s.pt',
                  source='data/images',  # file/dir/URL/glob/screen/0(webcam)
                  puzzle_source='data/images',
+                 position_json='position.json',
                  data='data/coco128.yaml',  # dataset.yaml path
                  imgsz=(640, 640),  # inference size (height, width)
                  conf_thres=0.25,  # confidence threshold
@@ -44,7 +45,7 @@ class Tennis:
         self.classes = classes
         self.visualize = visualize
         self.mc = MouseController()
-        self.button = 523 + 37
+        self.po = json.load(open(position_json))
 
         # Load model
         device = select_device(device)
@@ -83,7 +84,6 @@ class Tennis:
             for i, det in enumerate(pred):  # per image
                 seen += 1
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
-                p = Path(p)  # to Path
                 s += '%gx%g ' % im.shape[2:]  # print string
                 if len(det):
                     # Rescale boxes from img_size to im0 size
@@ -92,17 +92,18 @@ class Tennis:
         return None
 
     def run(self):
-        self.mc.move_and_click((320, 770))
+        self.mc.move_and_click((self.po["enter"][0] + self.po["tennis_window"][0], self.po["enter"][1] + self.po["tennis_window"][1]))
         time.sleep(0.5)
-        self.mc.move_and_click((209, 413 + 37))
+        self.mc.move_and_click((self.po["indoor"][0] + self.po["tennis_window"][0], self.po["indoor"][1] + self.po["tennis_window"][1]))
         time.sleep(0.1)
-        self.mc.move((368, 492 + 37))
+        last_time = (self.po["last_time"][0] + self.po["tennis_window"][0], self.po["last_time"][1] + self.po["tennis_window"][1])
+        self.mc.move(last_time)
         self.mc.hscroll(-500)
-        self.mc.move_and_click((361, 545))
-        self.mc.scroll(-500)
+        self.mc.double_click()
+        self.mc.move((last_time[0], last_time[0]+65))
+        self.mc.vscroll(-500)
         time.sleep(0.1)
-        shift_x = 0 + 37
-        ss = ScreenShot((0, shift_x, 413, 782), "./screenshot/area/")
+        ss = ScreenShot(self.po["tennis_window"], "./screenshot/area/")
         ss.run()
         det = self.inference(self.model, self.source)
         if det is not None:
@@ -115,8 +116,8 @@ class Tennis:
                     submit.append([(item[0] + item[2]) / 2, (item[1] + item[3]) / 2])
             price.sort(key=lambda k: k[1])
             final_price = price
-            final_price = [[item[0], item[1] + shift_x] for item in final_price]
-            submit = [[item[0], item[1] + shift_x] for item in submit]
+            final_price = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item in final_price]
+            submit = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item in submit]
             if len(final_price) != 0:
                 # final_price = [item for item in final_price if item[1] > 469]
                 print(
@@ -132,9 +133,9 @@ class Tennis:
                         self.mc.move_and_single_click(item)
                         print("second:{}".format(item))
                         break
-                self.mc.move_and_single_click((337, 718 + 37))
+                self.mc.move_and_single_click((self.po["submit_button"][0] + self.po["tennis_window"][0], self.po["submit_button"][1] + self.po["tennis_window"][1]))
                 time.sleep(1)
-                ss = ScreenShot((0, 37, 413, 782), "./screenshot/puzzle/")
+                ss = ScreenShot(self.po["tennis_window"], "./screenshot/puzzle/")
                 ss.run()
 
                 det = self.inference(self.puzzle_model, self.puzzle_source)
@@ -148,8 +149,8 @@ class Tennis:
                         else:
                             if item[0] > a:
                                 a = item[0]
-                    self.mc.move((a, 557))
-                    self.mc.drag((b, 557))
+                    self.mc.move((a, self.po["puzzle_button_y"] + self.po["tennis_window"][1]))
+                    self.mc.drag((b, self.po["puzzle_button_y"] + self.po["tennis_window"][1]))
             else:
                 print("未检测到目标区域，请到路径{}查看截图".format("./screenshot/area/ss.png"))
 
@@ -162,6 +163,7 @@ def parse_opt():
     parser.add_argument('--source', type=str, default='data/images', help='file/dir/URL/glob/screen/0(webcam)')
     parser.add_argument('--puzzle-source', type=str, default='data/images',
                         help='file/dir/URL/glob/screen/0(webcam)')
+    parser.add_argument('--position-json', type=str, default='position.json', help='')
     parser.add_argument('--data', type=str, default='data/tennis.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
@@ -183,7 +185,6 @@ def parse_opt():
 
 def main(opt):
     model = Tennis(**vars(opt))
-
     lighting_time = "12:00"
     print("waiting {} to run".format(lighting_time))
     while True:
