@@ -25,22 +25,10 @@ class Tennis:
                  iou_thres=0.45,  # NMS IOU threshold
                  max_det=1000,  # maximum detections per image
                  device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-                 view_img=False,  # show results
-                 save_txt=False,  # save results to *.txt
-                 save_conf=False,  # save confidences in --save-txt labels
-                 save_crop=False,  # save cropped prediction boxes
-                 nosave=False,  # do not save images/videos
                  classes=None,  # filter by class: --class 0, or --class 0 2 3
                  agnostic_nms=False,  # class-agnostic NMS
                  augment=False,  # augmented inference
                  visualize=False,  # visualize features
-                 update=False,  # update all models
-                 project='runs/detect',  # save results to project/name
-                 name='exp',  # save results to project/name
-                 exist_ok=False,  # existing project/name ok, do not increment
-                 line_thickness=3,  # bounding box thickness (pixels)
-                 hide_labels=False,  # hide labels
-                 hide_conf=False,  # hide confidences
                  half=False,  # use FP16 half-precision inference
                  dnn=False,  # use OpenCV DNN for ONNX inference
                  vid_stride=1  # video frame-rate stride
@@ -65,149 +53,105 @@ class Tennis:
         self.stride, self.names, self.pt = self.model.stride, self.model.names, self.model.pt
         self.imgsz = check_img_size(imgsz, s=self.stride)  # check image size
 
+    def inference(self, model, source):
+        # Dataloader
+        bs = 1  # batch_size
+        dataset = LoadImages(source, img_size=self.imgsz, stride=self.stride, auto=self.pt,
+                             vid_stride=self.vid_stride)
+
+        # Run inference
+        self.model.warmup(imgsz=(1 if self.pt or self.model.triton else bs, 3, *self.imgsz))  # warmup
+        seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
+        for path, im, im0s, vid_cap, s in dataset:
+            with dt[0]:
+                im = torch.from_numpy(im).to(self.model.device)
+                im = im.half() if self.model.fp16 else im.float()  # uint8 to fp16/32
+                im /= 255  # 0 - 255 to 0.0 - 1.0
+                if len(im.shape) == 3:
+                    im = im[None]  # expand for batch dim
+
+            # Inference
+            with dt[1]:
+                pred = model(im, augment=self.augment, visualize=self.visualize)
+
+            # NMS
+            with dt[2]:
+                pred = non_max_suppression(pred, self.conf_thres, self.iou_thres, self.classes, self.agnostic_nms,
+                                           max_det=self.max_det)
+
+            # Process predictions
+            for i, det in enumerate(pred):  # per image
+                seen += 1
+                p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
+                p = Path(p)  # to Path
+                s += '%gx%g ' % im.shape[2:]  # print string
+                if len(det):
+                    # Rescale boxes from img_size to im0 size
+                    det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
+                    return det
+        return None
+
     def run(self):
-        while True:
-            self.mc.move_and_click((320, 770))
-            time.sleep(0.5)
-            self.mc.move_and_click((209, 413 + 37))
-            time.sleep(0.1)
-            self.mc.move((368, 492 + 37))
-            self.mc.hscroll(-500)
-            self.mc.move_and_click((361, 545))
-            self.mc.scroll(-500)
-            time.sleep(0.1)
-            shift_x = 0 + 37
-            ss = ScreenShot((0, shift_x, 413, 782), "./screenshot/area/")
-            ss.run()
-            # Dataloader
-            bs = 1  # batch_size
-            dataset = LoadImages(self.source, img_size=self.imgsz, stride=self.stride, auto=self.pt,
-                                 vid_stride=self.vid_stride)
+        self.mc.move_and_click((320, 770))
+        time.sleep(0.5)
+        self.mc.move_and_click((209, 413 + 37))
+        time.sleep(0.1)
+        self.mc.move((368, 492 + 37))
+        self.mc.hscroll(-500)
+        self.mc.move_and_click((361, 545))
+        self.mc.scroll(-500)
+        time.sleep(0.1)
+        shift_x = 0 + 37
+        ss = ScreenShot((0, shift_x, 413, 782), "./screenshot/area/")
+        ss.run()
+        det = self.inference(self.model, self.source)
+        if det is not None:
+            price = []
+            submit = []
+            for item in det.numpy():
+                if item[-1] == 0:
+                    price.append([(item[0] + item[2]) / 2, (item[1] + item[3]) / 2])
+                elif item[-1] == 1:
+                    submit.append([(item[0] + item[2]) / 2, (item[1] + item[3]) / 2])
+            price.sort(key=lambda k: k[1])
+            final_price = price
+            final_price = [[item[0], item[1] + shift_x] for item in final_price]
+            submit = [[item[0], item[1] + shift_x] for item in submit]
+            if len(final_price) != 0:
+                # final_price = [item for item in final_price if item[1] > 469]
+                print(
+                    "检测到{}个空闲时间, 坐标分别为:{}, 检测到{}个提交按钮，坐标为{}".format(len(final_price),
+                                                                                            str(final_price),
+                                                                                            len(submit),
+                                                                                            str(submit)))
+                final_price.sort(key=lambda k: k[1])
+                self.mc.move_and_single_click(final_price[0])
+                print("first:{}".format(final_price[0]))
+                for item in final_price[1:]:
+                    if item[1] - final_price[0][1] > 20:
+                        self.mc.move_and_single_click(item)
+                        print("second:{}".format(item))
+                        break
+                self.mc.move_and_single_click((337, 718 + 37))
+                time.sleep(1)
+                ss = ScreenShot((0, 37, 413, 782), "./screenshot/puzzle/")
+                ss.run()
 
-            # Run inference
-            self.model.warmup(imgsz=(1 if self.pt or self.model.triton else bs, 3, *self.imgsz))  # warmup
-            seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
-            for path, im, im0s, vid_cap, s in dataset:
-                with dt[0]:
-                    im = torch.from_numpy(im).to(self.model.device)
-                    im = im.half() if self.model.fp16 else im.float()  # uint8 to fp16/32
-                    im /= 255  # 0 - 255 to 0.0 - 1.0
-                    if len(im.shape) == 3:
-                        im = im[None]  # expand for batch dim
-
-                # Inference
-                with dt[1]:
-                    # self.visualize = increment_path(self.save_dir / Path(path).stem, mkdir=True) if self.visualize else False
-                    pred = self.model(im, augment=self.augment, visualize=self.visualize)
-
-                # NMS
-                with dt[2]:
-                    pred = non_max_suppression(pred, self.conf_thres, self.iou_thres, self.classes, self.agnostic_nms,
-                                               max_det=self.max_det)
-
-                # Second-stage classifier (optional)
-                # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
-
-                price = []
-                submit = []
-                # Process predictions
-                for i, det in enumerate(pred):  # per image
-                    seen += 1
-                    p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
-                    p = Path(p)  # to Path
-                    s += '%gx%g ' % im.shape[2:]  # print string
-                    if len(det):
-                        # Rescale boxes from img_size to im0 size
-                        det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
-                        for item in det.numpy():
-                            if item[-1] == 0:
-                                price.append([(item[0] + item[2]) / 2, (item[1] + item[3]) / 2])
-                            elif item[-1] == 1:
-                                submit.append([(item[0] + item[2]) / 2, (item[1] + item[3]) / 2])
-                price.sort(key=lambda k: k[1])
-                print(price)
-                '''
-                price.append([1000, 500])
-                final_price = []
-                final_price.append(price[0])
-                for i in range(1, len(price)):
-                    if price[i][0] - price[i - 1][0] >= 20:
-                        final_price.append(price[i - 1])
-                '''
-                final_price = price
-                final_price = [[item[0], item[1] + shift_x] for item in final_price]
-                submit = [[item[0], item[1] + shift_x] for item in submit]
-                if len(final_price) != 0:
-                    # final_price = [item for item in final_price if item[1] > 469]
-                    print(
-                        "检测到{}个空闲时间, 坐标分别为:{}, 检测到{}个提交按钮，坐标为{}".format(len(final_price),
-                                                                                                str(final_price),
-                                                                                                len(submit),
-                                                                                                str(submit)))
-                    final_price.sort(key=lambda k: k[1])
-                    self.mc.move_and_single_click(final_price[0])
-                    print("first:{}".format(final_price[0]))
-                    for item in final_price[1:]:
-                        if item[1] - final_price[0][1] > 20:
-                            self.mc.move_and_single_click(item)
-                            print("second:{}".format(item))
-                            break
-                    self.mc.move_and_single_click((337, 718 + 37))
-                    # exit()
-                    time.sleep(1)
-                    ss = ScreenShot((0, 37, 413, 782), "./screenshot/puzzle/")
-                    ss.run()
-
-                    bs = 1  # batch_size
-                    dataset = LoadImages(self.puzzle_source, img_size=self.imgsz, stride=self.stride, auto=self.pt,
-                                         vid_stride=self.vid_stride)
-
-                    # Run inference
-                    self.puzzle_model.warmup(
-                        imgsz=(1 if self.pt or self.puzzle_model.triton else bs, 3, *self.imgsz))  # warmup
-                    seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
-                    for path, im, im0s, vid_cap, s in dataset:
-                        with dt[0]:
-                            im = torch.from_numpy(im).to(self.puzzle_model.device)
-                            im = im.half() if self.model.fp16 else im.float()  # uint8 to fp16/32
-                            im /= 255  # 0 - 255 to 0.0 - 1.0
-                            if len(im.shape) == 3:
-                                im = im[None]  # expand for batch dim
-
-                        # Inference
-                        with dt[1]:
-                            # self.visualize = increment_path(self.save_dir / Path(path).stem, mkdir=True) if self.visualize else False
-                            pred = self.puzzle_model(im, augment=self.augment, visualize=self.visualize)
-
-                        # NMS
-                        with dt[2]:
-                            pred = non_max_suppression(pred, self.conf_thres, self.iou_thres, self.classes,
-                                                       self.agnostic_nms,
-                                                       max_det=self.max_det)
-
-                        # Second-stage classifier (optional)
-                        # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
-                        a = 0
-                        b = 0
-                        # Process predictions
-                        for i, det in enumerate(pred):  # per image
-                            seen += 1
-                            p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
-                            p = Path(p)  # to Path
-                            s += '%gx%g ' % im.shape[2:]  # print string
-                            if len(det):
-                                # Rescale boxes from img_size to im0 size
-                                det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
-                            for item in det.numpy():
-                                if item[0] > 100:
-                                    if item[0] > b:
-                                        b = item[0]
-                                else:
-                                    if item[0] > a:
-                                        a = item[0]
-                        self.mc.move((a, 557))
-                        self.mc.drag((b, 557))
-            break
+                det = self.inference(self.puzzle_model, self.puzzle_source)
+                if det is not None:
+                    a = 0
+                    b = 0
+                    for item in det.numpy():
+                        if item[0] > 100:
+                            if item[0] > b:
+                                b = item[0]
+                        else:
+                            if item[0] > a:
+                                a = item[0]
+                    self.mc.move((a, 557))
+                    self.mc.drag((b, 557))
+            else:
+                print("未检测到目标区域，请到路径{}查看截图".format("./screenshot/area/ss.png"))
 
 
 def parse_opt():
@@ -224,22 +168,10 @@ def parse_opt():
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--view-img', action='store_true', help='show results')
-    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
-    parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
-    parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
-    parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
     parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --classes 0, or --classes 0 2 3')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--visualize', action='store_true', help='visualize features')
-    parser.add_argument('--update', action='store_true', help='update all models')
-    parser.add_argument('--project', default='runs/detect', help='save results to project/name')
-    parser.add_argument('--name', default='exp', help='save results to project/name')
-    parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
-    parser.add_argument('--line-thickness', default=3, type=int, help='bounding box thickness (pixels)')
-    parser.add_argument('--hide-labels', default=False, action='store_true', help='hide labels')
-    parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
@@ -250,8 +182,8 @@ def parse_opt():
 
 
 def main(opt):
-    check_requirements(exclude=('tensorboard', 'thop'))
     model = Tennis(**vars(opt))
+
     lighting_time = "12:00"
     print("waiting {} to run".format(lighting_time))
     while True:
@@ -260,7 +192,6 @@ def main(opt):
         if str(current_time.time()).startswith(lighting_time):
             print("current_time:    " + str(current_time.time()))
             break
-
     model.run()
 
 
