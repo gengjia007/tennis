@@ -70,12 +70,12 @@ class Tennis:
             self.mc.move_and_click((320, 770))
             time.sleep(0.5)
             self.mc.move_and_click((209, 413 + 37))
-            time.sleep(0.2)
+            time.sleep(0.1)
             self.mc.move((368, 492 + 37))
             self.mc.hscroll(-500)
             self.mc.move_and_click((361, 545))
             self.mc.scroll(-500)
-            time.sleep(0.2)
+            time.sleep(0.1)
             shift_x = 0 + 37
             ss = ScreenShot((0, shift_x, 413, 782), "./screenshot/area/")
             ss.run()
@@ -256,7 +256,7 @@ def main(opt):
     while True:
         time.sleep(0.01)
         current_time = datetime.datetime.now()
-        if str(current_time.time()).startswith("12:00"):
+        if str(current_time.time()).startswith("16:08"):
             print("current_time:    " + str(current_time.time()))
             break
 
