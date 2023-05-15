@@ -13,7 +13,7 @@ conda activate py3.8
 pip install -r requirements
 ```
 
-## Run
+## 2.Run
 ```bash
 python tennis.py --source ./screenshot/area --weights runs/train/area_model/weights/best.pt --puzzle-source ./screenshot/puzzle --puzzle-weights runs/train/puzzle_model/weights/best.pt
 ```
