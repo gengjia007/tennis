@@ -100,9 +100,9 @@ class Tennis:
         self.mc.move(last_time)
         self.mc.hscroll(-500)
         self.mc.double_click()
+        time.sleep(0.4)
         self.mc.move((last_time[0], last_time[0]+65))
         self.mc.vscroll(-500)
-        time.sleep(0.1)
         ss = ScreenShot(self.po["tennis_window"], "./screenshot/area/")
         ss.run()
         det = self.inference(self.model, self.source)
@@ -125,7 +125,7 @@ class Tennis:
                                                                                             str(final_price),
                                                                                             len(submit),
                                                                                             str(submit)))
-                final_price.sort(key=lambda k: k[1])
+                final_price.sort(key=lambda k: k[0], reverse=True)
                 self.mc.move_and_single_click(final_price[0])
                 print("first:{}".format(final_price[0]))
                 for item in final_price[1:]:
@@ -185,7 +185,7 @@ def parse_opt():
 
 def main(opt):
     model = Tennis(**vars(opt))
-    lighting_time = "12:00"
+    lighting_time = "20:56"
     print("waiting {} to run".format(lighting_time))
     while True:
         time.sleep(0.01)
