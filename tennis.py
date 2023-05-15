@@ -252,11 +252,12 @@ def parse_opt():
 def main(opt):
     check_requirements(exclude=('tensorboard', 'thop'))
     model = Tennis(**vars(opt))
-
+    lighting_time = "12:00"
+    print("waiting {} to run".format(lighting_time))
     while True:
         time.sleep(0.01)
         current_time = datetime.datetime.now()
-        if str(current_time.time()).startswith("16:08"):
+        if str(current_time.time()).startswith(lighting_time):
             print("current_time:    " + str(current_time.time()))
             break
 
