@@ -10,7 +10,7 @@ conda activate py3.8
 ```
 * install packages
 ```bash
-pip install -r requirements
+pip install -r requirements.txt
 ```
 
 ## 2.Run
