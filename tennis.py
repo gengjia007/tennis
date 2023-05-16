@@ -92,15 +92,12 @@ class Tennis:
         return None
 
     def run(self):
-        s = time.time()
         self.mc.move_and_single_click((self.po["enter"][0] + self.po["tennis_window"][0], self.po["enter"][1] + self.po["tennis_window"][1]))
-        print(time.time() - s)
         self.mc.move_and_single_click((self.po["indoor"][0] + self.po["tennis_window"][0], self.po["indoor"][1] + self.po["tennis_window"][1]))
         last_time = (self.po["last_time"][0] + self.po["tennis_window"][0], self.po["last_time"][1] + self.po["tennis_window"][1])
         self.mc.move(last_time)
         self.mc.hscroll(-500)
         self.mc.double_click()
-        s = time.time()
         self.mc.move((last_time[0], last_time[0]+65))
         self.mc.vscroll(-500)
         ss = ScreenShot(self.po["tennis_window"], "./screenshot/area/")
@@ -134,7 +131,7 @@ class Tennis:
                         print("second:{}".format(item))
                         break
                 self.mc.move_and_single_click((self.po["submit_button"][0] + self.po["tennis_window"][0], self.po["submit_button"][1] + self.po["tennis_window"][1]))
-                time.sleep(1.5)
+                time.sleep(1)
                 ss = ScreenShot(self.po["tennis_window"], "./screenshot/puzzle/")
                 ss.run()
 
