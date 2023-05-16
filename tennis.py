@@ -1,8 +1,9 @@
 import argparse
-import datetime
-import time
-from pathlib import Path
 import json
+import time
+import datetime
+import cv2
+
 import torch
 
 from models.common import DetectMultiBackend
@@ -92,13 +93,17 @@ class Tennis:
         return None
 
     def run(self):
-        self.mc.move_and_single_click((self.po["enter"][0] + self.po["tennis_window"][0], self.po["enter"][1] + self.po["tennis_window"][1]))
-        self.mc.move_and_single_click((self.po["indoor"][0] + self.po["tennis_window"][0], self.po["indoor"][1] + self.po["tennis_window"][1]))
-        last_time = (self.po["last_time"][0] + self.po["tennis_window"][0], self.po["last_time"][1] + self.po["tennis_window"][1])
+        self.mc.move_and_single_click(
+            (self.po["enter"][0] + self.po["tennis_window"][0], self.po["enter"][1] + self.po["tennis_window"][1]))
+        self.mc.move_and_single_click(
+            (self.po["indoor"][0] + self.po["tennis_window"][0], self.po["indoor"][1] + self.po["tennis_window"][1]))
+        last_time = (
+            self.po["last_time"][0] + self.po["tennis_window"][0],
+            self.po["last_time"][1] + self.po["tennis_window"][1])
         self.mc.move(last_time)
         self.mc.hscroll(-500)
         self.mc.double_click()
-        self.mc.move((last_time[0], last_time[0]+65))
+        self.mc.move((last_time[0], last_time[0] + 65))
         self.mc.vscroll(-500)
         ss = ScreenShot(self.po["tennis_window"], "./screenshot/area/")
         ss.run()
@@ -113,7 +118,8 @@ class Tennis:
                     submit.append([(item[0] + item[2]) / 2, (item[1] + item[3]) / 2])
             price.sort(key=lambda k: k[1])
             final_price = price
-            final_price = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item in final_price]
+            final_price = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item in
+                           final_price]
             submit = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item in submit]
             if len(final_price) != 0:
                 # final_price = [item for item in final_price if item[1] > 433]
@@ -130,10 +136,16 @@ class Tennis:
                         self.mc.move_and_single_click(item)
                         print("second:{}".format(item))
                         break
-                self.mc.move_and_single_click((self.po["submit_button"][0] + self.po["tennis_window"][0], self.po["submit_button"][1] + self.po["tennis_window"][1]))
-                time.sleep(1)
-                ss = ScreenShot(self.po["tennis_window"], "./screenshot/puzzle/")
-                ss.run()
+                self.mc.move_and_single_click((self.po["submit_button"][0] + self.po["tennis_window"][0],
+                                               self.po["submit_button"][1] + self.po["tennis_window"][1]))
+                while True:
+                    ss = ScreenShot(self.po["tennis_window"], "./screenshot/puzzle/")
+                    ss.run()
+                    im = cv2.imread("./screenshot/puzzle/ss.png")
+                    tmp = im[537, 92, :]
+                    if tmp[0] == 246 and tmp[1] == 119 and tmp[2] == 58:
+                        break
+                # 92 537
 
                 det = self.inference(self.puzzle_model, self.puzzle_source)
                 if det is not None:
@@ -181,16 +193,15 @@ def parse_opt():
 
 
 def main(opt):
+    # client = ntplib.NTPClient()
     model = Tennis(**vars(opt))
-
-    lighting_time = "12:00:00"
+    lighting_time = "20:11:00"
     print("waiting {} to run".format(lighting_time))
     while True:
         current_time = datetime.datetime.now()
         if str(current_time.time()).startswith(lighting_time):
             print("current_time:    " + str(current_time.time()))
             break
-
     model.run()
 
 
