@@ -1,4 +1,8 @@
 # lightning deals for tennis
+## Update
+* 2023-05-16
+  * 减少无效步骤，初始界面在抢场地界面
+  * 减少无效time.sleep
 ## 1. Prepare Environment
 * create conda virtual environment
 ```bash

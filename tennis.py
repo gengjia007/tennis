@@ -93,14 +93,14 @@ class Tennis:
 
     def run(self):
         self.mc.move_and_click((self.po["enter"][0] + self.po["tennis_window"][0], self.po["enter"][1] + self.po["tennis_window"][1]))
-        time.sleep(0.5)
+        # time.sleep(0.1)
         self.mc.move_and_click((self.po["indoor"][0] + self.po["tennis_window"][0], self.po["indoor"][1] + self.po["tennis_window"][1]))
-        time.sleep(0.1)
+        # time.sleep(0.1)
         last_time = (self.po["last_time"][0] + self.po["tennis_window"][0], self.po["last_time"][1] + self.po["tennis_window"][1])
         self.mc.move(last_time)
         self.mc.hscroll(-500)
         self.mc.double_click()
-        time.sleep(0.4)
+        # time.sleep(0.1)
         self.mc.move((last_time[0], last_time[0]+65))
         self.mc.vscroll(-500)
         ss = ScreenShot(self.po["tennis_window"], "./screenshot/area/")
@@ -119,22 +119,22 @@ class Tennis:
             final_price = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item in final_price]
             submit = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item in submit]
             if len(final_price) != 0:
-                # final_price = [item for item in final_price if item[1] > 469]
+                # final_price = [item for item in final_price if item[1] > 433]
                 print(
                     "检测到{}个空闲时间, 坐标分别为:{}, 检测到{}个提交按钮，坐标为{}".format(len(final_price),
                                                                                             str(final_price),
                                                                                             len(submit),
                                                                                             str(submit)))
-                final_price.sort(key=lambda k: k[0], reverse=True)
+                final_price.sort(key=lambda k: (k[1], -k[0]), reverse=True)
                 self.mc.move_and_single_click(final_price[0])
                 print("first:{}".format(final_price[0]))
                 for item in final_price[1:]:
-                    if item[1] - final_price[0][1] > 20:
+                    if abs(item[1] - final_price[0][1]) > 20:
                         self.mc.move_and_single_click(item)
                         print("second:{}".format(item))
                         break
                 self.mc.move_and_single_click((self.po["submit_button"][0] + self.po["tennis_window"][0], self.po["submit_button"][1] + self.po["tennis_window"][1]))
-                time.sleep(1)
+                time.sleep(1.5)
                 ss = ScreenShot(self.po["tennis_window"], "./screenshot/puzzle/")
                 ss.run()
 
@@ -185,7 +185,7 @@ def parse_opt():
 
 def main(opt):
     model = Tennis(**vars(opt))
-    lighting_time = "20:56"
+    lighting_time = "12:00"
     print("waiting {} to run".format(lighting_time))
     while True:
         time.sleep(0.01)
