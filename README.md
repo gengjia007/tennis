@@ -3,7 +3,8 @@
 * 2023-05-16
   * 减少无效步骤，初始界面在抢场地界面
   * 减少无效time.sleep
-  * 由于本地时间比标准北京时间慢300ms，设置起始时间为11:59:59.7
+  * 更新本地时间，同步国家授时中心时间，增加阿里云ntp服务：ntp.aliyun.com
+  ![img.png](img/img.png)
 ## 1. Prepare Environment
 * create conda virtual environment
 ```bash

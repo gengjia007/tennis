@@ -185,7 +185,7 @@ def parse_opt():
 
 def main(opt):
     model = Tennis(**vars(opt))
-    lighting_time = "11:59:59.7"
+    lighting_time = "12:00:00.00"
     print("waiting {} to run".format(lighting_time))
     while True:
         current_time = datetime.datetime.now()
