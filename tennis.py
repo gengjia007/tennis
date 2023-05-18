@@ -140,6 +140,7 @@ class Tennis:
                             break
                     self.mc.move_and_single_click((self.po["submit_button"][0] + self.po["tennis_window"][0],
                                                    self.po["submit_button"][1] + self.po["tennis_window"][1]))
+                    '''
                     while True:
                         ss = ScreenShot(self.po["tennis_window"], "./screenshot/puzzle/")
                         ss.run()
@@ -147,8 +148,9 @@ class Tennis:
                         tmp = im[537, 92, :]
                         if tmp[0] == 246 and tmp[1] == 119 and tmp[2] == 58:
                             break
+                    '''
                     # 92 537
-
+                    time.sleep(0.7)  # 取决于网速，网速快，这里的延迟可适当调小
                     det = self.inference(self.puzzle_model, self.puzzle_source)
                     if det is not None:
                         a = 0
@@ -199,7 +201,7 @@ def parse_opt():
 def main(opt):
     # client = ntplib.NTPClient()
     model = Tennis(**vars(opt))
-    lighting_time = "12:00:00"
+    lighting_time = "12:00"
     print("waiting {} to run".format(lighting_time))
     while True:
         current_time = datetime.datetime.now()
