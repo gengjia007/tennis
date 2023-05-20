@@ -103,7 +103,6 @@ class Tennis:
         self.mc.move(last_time)
         self.mc.hscroll(-500)
         self.mc.double_click()
-        time.sleep(0.2)
         self.mc.move((last_time[0], last_time[0] + 65))
         while True:
             self.mc.vscroll(-1000)
@@ -120,9 +119,11 @@ class Tennis:
                         submit.append([(item[0] + item[2]) / 2, (item[1] + item[3]) / 2])
                 price.sort(key=lambda k: k[1])
                 final_price = price
-                final_price = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item in
+                final_price = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item
+                               in
                                final_price]
-                submit = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item in submit]
+                submit = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item in
+                          submit]
                 if len(final_price) != 0:
                     # final_price = [item for item in final_price if item[1] > 433]
                     print(
@@ -130,7 +131,7 @@ class Tennis:
                                                                                                 str(final_price),
                                                                                                 len(submit),
                                                                                                 str(submit)))
-                    final_price.sort(key=lambda k: (k[1], -k[0]), reverse=True)
+                    final_price.sort(key=lambda k: (-k[1], k[0]), reverse=True)
                     self.mc.move_and_single_click(final_price[0])
                     print("first:{}".format(final_price[0]))
                     for item in final_price[1:]:
@@ -145,24 +146,45 @@ class Tennis:
                         ss = ScreenShot(self.po["tennis_window"], "./screenshot/puzzle/")
                         ss.run()
                         im = cv2.imread("./screenshot/puzzle/ss.png")
-                        tmp = im[537, 92, :]
-                        if tmp[0] == 246 and tmp[1] == 119 and tmp[2] == 58:
+                        tmp = im[535, 106, :]
+                        print(tmp)
+                        if abs(tmp[0] - 255) <= 10 and abs(tmp[1] - 121) <= 10 and abs(tmp[2] - 50) <= 10:
                             break
                     '''
                     # 92 537
-                    time.sleep(0.7)  # 取决于网速，网速快，这里的延迟可适当调小
+                    time.sleep(1)  # 取决于网速，网速快，这里的延迟可适当调小
+                    ss = ScreenShot(self.po["tennis_window"], "./screenshot/puzzle/")
+                    ss.run()
                     det = self.inference(self.puzzle_model, self.puzzle_source)
+                    for item in det.numpy():
+                        print(item, item[2]-item[0], item[3]-item[1])
+                    '''
+                    if det is not None:
+                        left = [item for item in det.numpy() if item[0] < 100]
+                        right = [item for item in det.numpy() if item[0] >= 100]
+                        a = sum([item[0] for item in left])/len(left)
+                        b = sum([item[0] for item in right])/len(right)
+                        print(a, b)
+                        self.mc.move((a, self.po["puzzle_button_y"] + self.po["tennis_window"][1]))
+                        self.mc.drag((b, self.po["puzzle_button_y"] + self.po["tennis_window"][1]))
+                        break
+                    '''
+
                     if det is not None:
                         a = 0
                         b = 0
+                        w_th = 100
+                        h_th = 100
                         for item in det.numpy():
+                            w = item[2]-item[0]
                             if item[0] > 100:
-                                if item[0] > b:
+                                if abs(w-45) < w_th:
+                                    w_th = abs(w-45)
                                     b = item[0]
                             else:
-                                if item[0] > a:
+                                if abs(w-45) < h_th:
+                                    h_th = abs(w - 45)
                                     a = item[0]
-                        print(a, b)
                         self.mc.move((a, self.po["puzzle_button_y"] + self.po["tennis_window"][1]))
                         self.mc.drag((b, self.po["puzzle_button_y"] + self.po["tennis_window"][1]))
                     break
@@ -201,6 +223,7 @@ def parse_opt():
 def main(opt):
     # client = ntplib.NTPClient()
     model = Tennis(**vars(opt))
+    '''
     lighting_time = "12:00"
     print("waiting {} to run".format(lighting_time))
     while True:
@@ -208,6 +231,7 @@ def main(opt):
         if str(current_time.time()).startswith(lighting_time):
             print("current_time:    " + str(current_time.time()))
             break
+    '''
     model.run()
 
 
