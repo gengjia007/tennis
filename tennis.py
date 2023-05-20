@@ -223,7 +223,6 @@ def parse_opt():
 def main(opt):
     # client = ntplib.NTPClient()
     model = Tennis(**vars(opt))
-
     lighting_time = "12:00"
     print("waiting {} to run".format(lighting_time))
     while True:
@@ -231,7 +230,6 @@ def main(opt):
         if str(current_time.time()).startswith(lighting_time):
             print("current_time:    " + str(current_time.time()))
             break
-
     model.run()
 
 
