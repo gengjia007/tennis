@@ -93,8 +93,9 @@ class Tennis:
         return None
 
     def run(self):
-        self.mc.move_and_single_click(
+        self.mc.move_and_click(
             (self.po["enter"][0] + self.po["tennis_window"][0], self.po["enter"][1] + self.po["tennis_window"][1]))
+        time.sleep(0.5)
         self.mc.move_and_single_click(
             (self.po["indoor"][0] + self.po["tennis_window"][0], self.po["indoor"][1] + self.po["tennis_window"][1]))
         last_time = (
@@ -223,6 +224,7 @@ def parse_opt():
 def main(opt):
     # client = ntplib.NTPClient()
     model = Tennis(**vars(opt))
+    '''
     lighting_time = "12:00"
     print("waiting {} to run".format(lighting_time))
     while True:
@@ -230,6 +232,7 @@ def main(opt):
         if str(current_time.time()).startswith(lighting_time):
             print("current_time:    " + str(current_time.time()))
             break
+    '''
     model.run()
 
 
