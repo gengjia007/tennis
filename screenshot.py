@@ -10,6 +10,10 @@ class ScreenShot:
     def run(self):
         im = ImageGrab.grab(bbox=self.position)
         im.save(os.path.join(self.path, "ss.png"))
+    
+    def get_matrix(self):
+        im = ImageGrab.grab(bbox=self.position)
+        return im
 
 
 # ss = ScreenShot((0, 37, 413, 782+37), "../samples/")

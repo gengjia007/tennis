@@ -2,8 +2,6 @@ import argparse
 import json
 import time
 import datetime
-import cv2
-
 import torch
 
 from models.common import DetectMultiBackend
@@ -47,6 +45,7 @@ class Tennis:
         self.visualize = visualize
         self.mc = MouseController()
         self.po = json.load(open(position_json))
+        self.ss = ScreenShot(self.po["tennis_window"], "./screenshot/area/")
 
         # Load model
         device = select_device(device)
@@ -92,19 +91,42 @@ class Tennis:
                     return det
         return None
 
+    def wait_black(self, position):
+        last = 243
+        print("-------------")
+        num = 0
+        flag = 0
+        while True:
+            im = self.ss.get_matrix()
+            rgb = im.getpixel(position)
+            print(rgb)
+            if rgb[0] > 150:
+                num += 1
+            else:
+                flag = 1
+            if rgb[0] > 150 and abs(rgb[0]-last) >= 100:
+                break
+            last = rgb[0]
+            if num >= 4 and flag == 0:
+                break
+
+
     def run(self):
-        self.mc.move_and_click(
-            (self.po["enter"][0] + self.po["tennis_window"][0], self.po["enter"][1] + self.po["tennis_window"][1]))
-        time.sleep(0.5)
+        black_p = (self.po["black_window"][0], self.po["black_window"][1])
+        self.mc.move_and_single_click(
+            (self.po["wilson"][0] + self.po["tennis_window"][0], self.po["wilson"][1] + self.po["tennis_window"][1]))
+        self.wait_black(black_p)
         self.mc.move_and_single_click(
             (self.po["indoor"][0] + self.po["tennis_window"][0], self.po["indoor"][1] + self.po["tennis_window"][1]))
+        self.wait_black(black_p)
         last_time = (
             self.po["last_time"][0] + self.po["tennis_window"][0],
             self.po["last_time"][1] + self.po["tennis_window"][1])
         self.mc.move(last_time)
         self.mc.hscroll(-500)
         self.mc.double_click()
-        self.mc.move((last_time[0], last_time[0] + 65))
+        self.wait_black(black_p)
+        # self.mc.move((last_time[0], last_time[0] + 65))
         while True:
             self.mc.vscroll(-1000)
             ss = ScreenShot(self.po["tennis_window"], "./screenshot/area/")
@@ -132,7 +154,7 @@ class Tennis:
                                                                                                 str(final_price),
                                                                                                 len(submit),
                                                                                                 str(submit)))
-                    final_price.sort(key=lambda k: (-k[1], k[0]), reverse=True)
+                    final_price.sort(key=lambda k: (k[1], k[0]), reverse=True)
                     self.mc.move_and_single_click(final_price[0])
                     print("first:{}".format(final_price[0]))
                     for item in final_price[1:]:
@@ -153,7 +175,7 @@ class Tennis:
                             break
                     '''
                     # 92 537
-                    time.sleep(1)  # 取决于网速，网速快，这里的延迟可适当调小
+                    time.sleep(0.8)  # 取决于网速，网速快，这里的延迟可适当调小
                     ss = ScreenShot(self.po["tennis_window"], "./screenshot/puzzle/")
                     ss.run()
                     det = self.inference(self.puzzle_model, self.puzzle_source)
@@ -222,12 +244,12 @@ def parse_opt():
 
 
 def main(opt):
-    # client = ntplib.NTPClient()
     model = Tennis(**vars(opt))
-    '''
     lighting_time = "12:00"
     print("waiting {} to run".format(lighting_time))
+    '''
     while True:
+        time.sleep(0.01)
         current_time = datetime.datetime.now()
         if str(current_time.time()).startswith(lighting_time):
             print("current_time:    " + str(current_time.time()))

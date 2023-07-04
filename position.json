@@ -1,8 +1,10 @@
 {
   "tennis_window": [0, 37, 414, 817],
+  "wilson": [85, 241],
   "enter": [321, 724],
   "indoor": [206, 413],
   "last_time": [368, 492],
   "submit_button": [337, 718],
-  "puzzle_button_y": 520
+  "puzzle_button_y": 520,
+  "black_window": [180, 375]
 }

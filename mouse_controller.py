@@ -37,3 +37,6 @@ class MouseController:
     def move_and_single_click(self, position):
         self.move(position)
         pg.click(duration=0.01)
+    
+    def get_pixel(self, position):
+        return pg.pixel(position[0], position[1])
