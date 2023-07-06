@@ -14,7 +14,3 @@ class ScreenShot:
     def get_matrix(self):
         im = ImageGrab.grab(bbox=self.position)
         return im
-
-
-# ss = ScreenShot((0, 37, 413, 782+37), "../samples/")
-# ss.run("ss")

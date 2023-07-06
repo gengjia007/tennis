@@ -46,6 +46,7 @@ class Tennis:
         self.mc = MouseController()
         self.po = json.load(open(position_json))
         self.ss = ScreenShot(self.po["tennis_window"], "./screenshot/area/")
+        self.ss1 = ScreenShot(self.po["tennis_window"], "./screenshot/puzzle/")
 
         # Load model
         device = select_device(device)
@@ -93,13 +94,13 @@ class Tennis:
 
     def wait_black(self, position):
         last = 243
-        print("-------------")
+        # print("-------------")
         num = 0
         flag = 0
         while True:
             im = self.ss.get_matrix()
             rgb = im.getpixel(position)
-            print(rgb)
+            # print(rgb)
             if rgb[0] > 150:
                 num += 1
             else:
@@ -127,92 +128,67 @@ class Tennis:
         self.mc.double_click()
         self.wait_black(black_p)
         # self.mc.move((last_time[0], last_time[0] + 65))
-        while True:
-            self.mc.vscroll(-1000)
-            ss = ScreenShot(self.po["tennis_window"], "./screenshot/area/")
-            ss.run()
-            det = self.inference(self.model, self.source)
-            if det is not None:
-                price = []
-                submit = []
-                for item in det.numpy():
-                    if item[-1] == 0:
-                        price.append([(item[0] + item[2]) / 2, (item[1] + item[3]) / 2])
-                    elif item[-1] == 1:
-                        submit.append([(item[0] + item[2]) / 2, (item[1] + item[3]) / 2])
-                price.sort(key=lambda k: k[1])
-                final_price = price
-                final_price = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item
-                               in
-                               final_price]
-                submit = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item in
-                          submit]
-                if len(final_price) != 0:
-                    # final_price = [item for item in final_price if item[1] > 433]
-                    print(
-                        "检测到{}个空闲时间, 坐标分别为:{}, 检测到{}个提交按钮，坐标为{}".format(len(final_price),
-                                                                                                str(final_price),
-                                                                                                len(submit),
-                                                                                                str(submit)))
-                    final_price.sort(key=lambda k: (k[1], k[0]), reverse=True)
-                    self.mc.move_and_single_click(final_price[0])
-                    print("first:{}".format(final_price[0]))
-                    for item in final_price[1:]:
-                        if abs(item[1] - final_price[0][1]) > 20:
-                            self.mc.move_and_single_click(item)
-                            print("second:{}".format(item))
-                            break
-                    self.mc.move_and_single_click((self.po["submit_button"][0] + self.po["tennis_window"][0],
-                                                   self.po["submit_button"][1] + self.po["tennis_window"][1]))
-                    '''
-                    while True:
-                        ss = ScreenShot(self.po["tennis_window"], "./screenshot/puzzle/")
-                        ss.run()
-                        im = cv2.imread("./screenshot/puzzle/ss.png")
-                        tmp = im[535, 106, :]
-                        print(tmp)
-                        if abs(tmp[0] - 255) <= 10 and abs(tmp[1] - 121) <= 10 and abs(tmp[2] - 50) <= 10:
-                            break
-                    '''
-                    # 92 537
-                    time.sleep(0.8)  # 取决于网速，网速快，这里的延迟可适当调小
-                    ss = ScreenShot(self.po["tennis_window"], "./screenshot/puzzle/")
-                    ss.run()
-                    det = self.inference(self.puzzle_model, self.puzzle_source)
-                    for item in det.numpy():
-                        print(item, item[2]-item[0], item[3]-item[1])
-                    '''
-                    if det is not None:
-                        left = [item for item in det.numpy() if item[0] < 100]
-                        right = [item for item in det.numpy() if item[0] >= 100]
-                        a = sum([item[0] for item in left])/len(left)
-                        b = sum([item[0] for item in right])/len(right)
-                        print(a, b)
-                        self.mc.move((a, self.po["puzzle_button_y"] + self.po["tennis_window"][1]))
-                        self.mc.drag((b, self.po["puzzle_button_y"] + self.po["tennis_window"][1]))
+        self.mc.vscroll(-1000)
+        self.ss.run()
+        det = self.inference(self.model, self.source)
+        if det is not None:
+            price = []
+            submit = []
+            for item in det.numpy():
+                if item[-1] == 0:
+                    price.append([(item[0] + item[2]) / 2, (item[1] + item[3]) / 2])
+                elif item[-1] == 1:
+                    submit.append([(item[0] + item[2]) / 2, (item[1] + item[3]) / 2])
+            price.sort(key=lambda k: k[1])
+            final_price = price
+            final_price = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item
+                            in
+                            final_price]
+            submit = [[item[0] + self.po["tennis_window"][0], item[1] + self.po["tennis_window"][1]] for item in
+                        submit]
+            if len(final_price) != 0:
+                # final_price = [item for item in final_price if item[1] > 433]
+                print(
+                    "检测到{}个空闲时间, 坐标分别为:{}, 检测到{}个提交按钮，坐标为{}".format(len(final_price),
+                                                                                            str(final_price),
+                                                                                            len(submit),
+                                                                                            str(submit)))
+                final_price.sort(key=lambda k: (k[1], k[0]), reverse=True)
+                self.mc.move_and_single_click(final_price[0])
+                print("first:{}".format(final_price[0]))
+                for item in final_price[1:]:
+                    if abs(item[1] - final_price[0][1]) > 20:
+                        self.mc.move_and_single_click(item)
+                        print("second:{}".format(item))
                         break
-                    '''
+                self.mc.move_and_single_click((self.po["submit_button"][0] + self.po["tennis_window"][0],
+                                                self.po["submit_button"][1] + self.po["tennis_window"][1]))
+                # 92 537
+                time.sleep(1)  # 取决于网速，网速快，这里的延迟可适当调小
+                self.ss1.run()
+                det = self.inference(self.puzzle_model, self.puzzle_source)
+                for item in det.numpy():
+                    print(item, item[2]-item[0], item[3]-item[1])
 
-                    if det is not None:
-                        a = 0
-                        b = 0
-                        w_th = 100
-                        h_th = 100
-                        for item in det.numpy():
-                            w = item[2]-item[0]
-                            if item[0] > 100:
-                                if abs(w-45) < w_th:
-                                    w_th = abs(w-45)
-                                    b = item[0]
-                            else:
-                                if abs(w-45) < h_th:
-                                    h_th = abs(w - 45)
-                                    a = item[0]
-                        self.mc.move((a, self.po["puzzle_button_y"] + self.po["tennis_window"][1]))
-                        self.mc.drag((b, self.po["puzzle_button_y"] + self.po["tennis_window"][1]))
-                    break
-                else:
-                    print("未检测到目标区域，请到路径{}查看截图".format("./screenshot/area/ss.png"))
+                if det is not None:
+                    a = 0
+                    b = 0
+                    w_th = 100
+                    h_th = 100
+                    for item in det.numpy():
+                        w = item[2]-item[0]
+                        if item[0] > 100:
+                            if abs(w-45) < w_th:
+                                w_th = abs(w-45)
+                                b = item[0]
+                        else:
+                            if abs(w-45) < h_th:
+                                h_th = abs(w - 45)
+                                a = item[0]
+                    self.mc.move((a, self.po["puzzle_button_y"] + self.po["tennis_window"][1]))
+                    self.mc.drag((b, self.po["puzzle_button_y"] + self.po["tennis_window"][1]))
+            else:
+                print("未检测到目标区域，请到路径{}查看截图".format("./screenshot/area/ss.png"))
 
 
 def parse_opt():
@@ -247,14 +223,14 @@ def main(opt):
     model = Tennis(**vars(opt))
     lighting_time = "12:00"
     print("waiting {} to run".format(lighting_time))
-    '''
+    
     while True:
         time.sleep(0.01)
         current_time = datetime.datetime.now()
         if str(current_time.time()).startswith(lighting_time):
             print("current_time:    " + str(current_time.time()))
             break
-    '''
+    
     model.run()
 
 
