@@ -1,5 +1,7 @@
 # lightning deals for tennis
 ## Update
+* 2023-07-06
+  * 优化程序交互问题，增加等待处理框的判断，使得有效动作更快
 * 2023-05-18
   * 增加目标检测轮询，解决速度过快，场地未刷新的问题
 * 2023-05-16
@@ -30,12 +32,14 @@ python tennis.py --source ./screenshot/area --weights runs/train/area_model/weig
 * please check the position.json before running
 ```json
 {
-  "tennis_window": [406, 226, 816, 1007],
-  "enter": [320, 733],
-  "indoor": [209, 413],
+  "tennis_window": [0, 37, 414, 817],
+  "wilson": [85, 241],
+  "enter": [321, 724],
+  "indoor": [206, 413],
   "last_time": [368, 492],
   "submit_button": [337, 718],
-  "puzzle_button_y": 520
+  "puzzle_button_y": 520,
+  "black_window": [180, 375]
 }
 
 ```
@@ -45,3 +49,4 @@ python tennis.py --source ./screenshot/area --weights runs/train/area_model/weig
 * last_time[x1, y1]: the latest time position
 * submit_button[x1, y1]: submit button position
 * puzzle_button_y[y1]: the y index of puzzle_button
+* black_window[x1, y1]: the position of the wait interaction
