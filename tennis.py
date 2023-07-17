@@ -92,11 +92,11 @@ class Tennis:
                     return det
         return None
 
-    def wait_black(self, position):
+    def wait_black(self, position, force=False):
         last = 243
-        # print("-------------")
         num = 0
         flag = 0
+        start_time = time.time()
         while True:
             im = self.ss.get_matrix()
             rgb = im.getpixel(position)
@@ -110,25 +110,38 @@ class Tennis:
             last = rgb[0]
             if num >= 4 and flag == 0:
                 break
+            if force:
+                if time.time() - start_time > 1:
+                    print(time.time() - start_time)
+                    break
+
 
 
     def run(self):
-        black_p = (self.po["black_window"][0], self.po["black_window"][1])
+        # 交互黑框的位置
+        black_p = (self.po["black_window"][0], self.po["black_window"][1]) 
+
+        # 点击wilson网球按钮并等待交互结束
         self.mc.move_and_single_click(
             (self.po["wilson"][0] + self.po["tennis_window"][0], self.po["wilson"][1] + self.po["tennis_window"][1]))
         self.wait_black(black_p)
+        
+        # 点击室内网球场按钮并等待交互结束
         self.mc.move_and_single_click(
             (self.po["indoor"][0] + self.po["tennis_window"][0], self.po["indoor"][1] + self.po["tennis_window"][1]))
         self.wait_black(black_p)
+
+        # 点击最新时间节点并等待交互结束
         last_time = (
             self.po["last_time"][0] + self.po["tennis_window"][0],
             self.po["last_time"][1] + self.po["tennis_window"][1])
         self.mc.move(last_time)
-        self.mc.hscroll(-500)
+        self.mc.hscroll(-500)  ## 水平滑动
         self.mc.double_click()
         self.wait_black(black_p)
+
         # self.mc.move((last_time[0], last_time[0] + 65))
-        self.mc.vscroll(-1000)
+        self.mc.vscroll(-1000) ## 垂直滑动
         self.ss.run()
         det = self.inference(self.model, self.source)
         if det is not None:
@@ -154,6 +167,7 @@ class Tennis:
                                                                                             len(submit),
                                                                                             str(submit)))
                 final_price.sort(key=lambda k: (k[1], k[0]), reverse=True)
+                final_price = [item for item in final_price if item[1] >= 351]
                 self.mc.move_and_single_click(final_price[0])
                 print("first:{}".format(final_price[0]))
                 for item in final_price[1:]:
